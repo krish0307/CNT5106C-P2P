@@ -17,10 +17,6 @@ public class HandShakeMessage implements IMessage {
 		return peerId;
 	}
 
-	public void setPeerID(String peerID) {
-		this.peerId = peerID;
-	}
-
 	public static String getHeader() {
 		return Header;
 	}

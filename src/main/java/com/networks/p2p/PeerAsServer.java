@@ -7,9 +7,11 @@ import java.net.Socket;
 public class PeerAsServer implements Runnable {
 	private int peerPort;
 	private String peerId;
+	private PeerManager manager;
 
-	public PeerAsServer(String peerId, String peerPort) {
+	public PeerAsServer(String peerId, String peerPort, PeerManager manager) {
 		this.peerPort = Integer.parseInt(peerPort);
+		this.manager = manager;
 	}
 
 	@Override
@@ -20,7 +22,7 @@ public class PeerAsServer implements Runnable {
 			long count = getNumberOfPeersToBeConnected();
 			for (int i = 0; i < count; i++) {
 				Socket conn = socket.accept();
-				PeerHandler handler = new PeerHandler(conn, peerId);
+				PeerHandler handler = new PeerHandler(conn, peerId, manager);
 				new Thread(handler).start();
 
 			}

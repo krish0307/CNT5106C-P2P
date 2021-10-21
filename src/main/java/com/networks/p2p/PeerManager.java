@@ -36,7 +36,7 @@ public class PeerManager {
 
 	private void createServerForThisPeer(List<PeerData> peersData) {
 		PeerData myData = peersData.stream().filter(data -> data.getPeerId().equals(peerId)).findAny().get();
-		PeerAsServer server = new PeerAsServer(peerId, myData.getPeerPort());
+		PeerAsServer server = new PeerAsServer(peerId, myData.getPeerPort(),this);
 		new Thread(server).start();
 	}
 
@@ -47,7 +47,7 @@ public class PeerManager {
 				int peerPort = Integer.parseInt(connectedNeighbours.getPeerPort());
 				String peerAddress = connectedNeighbours.getPeerAddress();
 				Socket neighbourSocket = new Socket(peerAddress, peerPort);
-				PeerHandler handler = new PeerHandler(neighbourSocket,connectedNeighbours.getPeerId());
+				PeerHandler handler = new PeerHandler(neighbourSocket,connectedNeighbours.getPeerId(),this);
 				new Thread(handler).start();
 			}
 		} catch (IOException e) {

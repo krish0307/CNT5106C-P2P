@@ -16,8 +16,9 @@ public class P2PLogger {
 		try {
 			String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
-			FileAppender appender = new FileAppender(new PatternLayout("%d [%p|%c|%C{1}] %m%n"), "P2P-" + timeStamp,
-					true);
+			FileAppender appender = new FileAppender(new PatternLayout("%d [%p|%c|%C{1}] %m%n"),
+					"P2P-" + timeStamp + ".log", true);
+//			appender.setFile(timeStamp);
 			appender.activateOptions();
 			Logger.getRootLogger().addAppender(appender);
 		} catch (IOException e) {
@@ -32,39 +33,37 @@ public class P2PLogger {
 		return instance;
 	}
 
-	public void socketStarted() {
-		logger.info("Server has started");
+	public void info(String className, String method, String msg) {
+		logger.info("ClassName-" + className + "." + method + " Message - " + msg);
 	}
 
-	public void writeLog(String msg) {
-		writeLog(msg, null);
+	public void error(String className, String method, String msg, Exception e) {
+		logger.error("ClassName-" + className + "." + method + " Message - " + msg, e);
 	}
 
-	public void writeLog(String msg, MessageType type) {
-		switch (type) {
-		case HANDSHAKE:
-			break;
-		case CHOKE:
-			break;
-		case UNCHOKE:
-			break;
-		case INTERESTED:
-			break;
-		case NOTINTERESTED:
-			break;
-		case HAVE:
-			break;
-		case BITFIELD:
-			break;
-		case REQUEST:
-			break;
-		case PIECE:
-			break;
+	public void error(String className, String method, String msg) {
+		logger.error("ClassName-" + className + "." + method + " Message - " + msg);
+	}
 
-		default:
-			logger.info(msg);
-		}
+	public void error(String className, String method, Exception e) {
+		logger.error("ClassName-" + className + "." + method, e);
+	}
 
+	public void warning(String className, String method, String msg) {
+		logger.warn("ClassName-" + className + "." + method + " Message - " + msg);
+	}
+
+	public void debug(String className, String method, String msg) {
+		logger.debug("ClassName-" + className + "." + method + " Message - " + msg);
+	}
+
+	public void debug(String className, String method, String msg, Exception e) {
+		logger.debug("ClassName-" + className + "." + method + " Message - " + msg, e);
+	}
+
+	public static void main(String[] args) {
+		P2PLogger log = P2PLogger.getInstance();
+		log.info("hello", "hello", "hello");
 	}
 
 }

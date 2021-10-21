@@ -9,8 +9,10 @@ public class PeerHandler implements Runnable {
 	private Socket socket;
 	private String peerId;
 	private boolean isHandShakeSent;
+	private boolean isHandShakeReceived;
+	private P2PLogger logger = P2PLogger.getInstance();
 
-	public PeerHandler(Socket socket, String peerId) {
+	public PeerHandler(Socket socket, String peerId, PeerManager manager) {
 		this.socket = socket;
 		this.peerId = peerId;
 	}
@@ -49,19 +51,27 @@ public class PeerHandler implements Runnable {
 		}
 	}
 
-	private void processHandshakeMessage(HandShakeMessage message) {
-		String peerId = message.getPeerId();
-//		sendBitFieldMessage();
-		if (!isHandShakeSent) {
-
-		}
-	}
-
 	private void sendHandShakeMessage(ObjectOutputStream neighborPeerOutputStream) throws IOException {
 		HandShakeMessage msg = new HandShakeMessage(peerId);
 		neighborPeerOutputStream.writeUnshared(msg);
 		neighborPeerOutputStream.flush();
 		isHandShakeSent = true;
+	}
+
+	private void processHandshakeMessage(HandShakeMessage message) {
+		String peerIdInMsg = message.getPeerId();
+		if (peerIdInMsg == peerId && isHandShakeSent) {
+			isHandShakeReceived = true;
+			sendBitFieldMessage();
+
+		} else {
+			logger.error(this.getClass().getSimpleName(), "processHandshakeMessage",
+					"PeerId in message is different for this peerhandler or handshake not sent");
+		}
+	}
+
+	private void sendBitFieldMessage() {
+		
 	}
 
 }
