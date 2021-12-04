@@ -10,8 +10,11 @@ import java.util.stream.Collectors;
 
 public class FileParser {
 	private final static String COMMENT_CHAR = "#";
+	private static final String CLASS_NAME = FileParser.class.getCanonicalName();
 	private HashMap<String, PeerData> peerIdToData;
 	private static FileParser instance;
+	private CommonData data;
+	private P2PLogger logger = P2PLogger.getInstance();
 
 	public static FileParser getInstance() {
 		if (instance == null) {
@@ -45,20 +48,21 @@ public class FileParser {
 				i++;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(CLASS_NAME, "parsePeersFile", e);
 		} finally {
 			try {
 				inputFileReader.close();
 				in.close();
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error(CLASS_NAME, "parsePeersFile", e);
 			}
 		}
+		logger.info(CLASS_NAME, "parsePeersFile", "Parsing is finished with data" + peersData.toString());
 		return peersData;
 	}
 
 	public CommonData parseCommonFile(String fileLoc) {
-		CommonData data = new CommonData();
+		data = new CommonData();
 		try {
 			BufferedReader in = new BufferedReader(new FileReader("Common.cfg"));
 			for (String line; (line = in.readLine()) != null;) {
@@ -83,12 +87,23 @@ public class FileParser {
 			in.close();
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error(CLASS_NAME, "parseCommonFile", e);
+		}
+		logger.info(CLASS_NAME, "parseCommonFile", "Parsing is finished with data" + data.toString());
+		return data;
+	}
+
+	public CommonData getCommonFileData() {
+		if (data == null) {
+			parseCommonFile(Constants.CONFIGURATION_FILE);
 		}
 		return data;
 	}
 
 	public HashMap<String, PeerData> getIdToPeerDataMap() {
+		if (peerIdToData == null) {
+			parsePeersFile(Constants.PEER_INFO_FILE);
+		}
 		return peerIdToData;
 	}
 

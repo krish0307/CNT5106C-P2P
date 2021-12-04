@@ -1,5 +1,6 @@
 package com.networks.p2p;
 
+
 public class CommonData {
 	private int numberOfPreferredNeighbors;
 	private int unchokingInterval;

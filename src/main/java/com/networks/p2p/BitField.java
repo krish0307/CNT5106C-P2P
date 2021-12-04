@@ -18,7 +18,7 @@ public class BitField implements Serializable {
 		size = numOfPieces;
 	}
 
-	public void setAllPieces() {
+	public void setBitFieldOnForAllIndexes() {
 		bits.set(0, size);
 	}
 
@@ -30,7 +30,7 @@ public class BitField implements Serializable {
 		return size;
 	}
 
-	public boolean isAllPiecesFilled() {
+	public boolean isFileDownloadComplete() {
 		return bits.cardinality() == size;
 	}
 
@@ -47,7 +47,13 @@ public class BitField implements Serializable {
 		return missingPieces;
 	}
 
-	public void setPiece(int index) {
-		bits.set(index);
+	public void setBitField(int index, boolean status) {
+		bits.set(index, status);
 	}
+
+	public boolean getBitField(int index) {
+		return bits.get(index);
+	}
+
+
 }

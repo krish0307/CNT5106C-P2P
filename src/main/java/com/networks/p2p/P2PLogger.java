@@ -12,12 +12,12 @@ public class P2PLogger {
 	static final Logger logger = Logger.getLogger(P2PLogger.class);
 	private static P2PLogger instance = null;
 
-	private P2PLogger() {
+	private P2PLogger(String peerId) {
 		try {
 			String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
 
 			FileAppender appender = new FileAppender(new PatternLayout("%d [%p|%c|%C{1}] %m%n"),
-					"P2P-" + timeStamp + ".log", true);
+					"P2P- " + peerId + " - " + timeStamp + ".log", true);
 //			appender.setFile(timeStamp);
 			appender.activateOptions();
 			Logger.getRootLogger().addAppender(appender);
@@ -26,10 +26,14 @@ public class P2PLogger {
 		}
 	}
 
-	public static P2PLogger getInstance() {
+	public static P2PLogger getInstance(String peerId) {
 		if (instance == null) {
-			instance = new P2PLogger();
+			instance = new P2PLogger(peerId);
 		}
+		return instance;
+	}
+
+	public static P2PLogger getInstance() {
 		return instance;
 	}
 
@@ -59,11 +63,6 @@ public class P2PLogger {
 
 	public void debug(String className, String method, String msg, Exception e) {
 		logger.debug("ClassName-" + className + "." + method + " Message - " + msg, e);
-	}
-
-	public static void main(String[] args) {
-		P2PLogger log = P2PLogger.getInstance();
-		log.info("hello", "hello", "hello");
 	}
 
 }

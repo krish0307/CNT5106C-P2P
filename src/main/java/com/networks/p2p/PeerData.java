@@ -1,55 +1,53 @@
 package com.networks.p2p;
 
-import java.util.BitSet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class PeerData {
 
-	private final String peerId;
-	private final String peerAddress;
-	private final String peerPort;
-	private final boolean hasFile;
-	private AtomicInteger bytesDownloadedFrom;
-	private BitSet receivedParts;
-	private final AtomicBoolean interested;
+	private String address;
+	private int port;
+	private String peerId;
+	private boolean fileExist;
 
 	public PeerData(String peerId, String peerAddress, String peerPort, boolean hasFile) {
 		this.peerId = peerId;
-		this.peerAddress = peerAddress;
-		this.peerPort = peerPort;
-		this.hasFile = hasFile;
-		this.bytesDownloadedFrom = new AtomicInteger(0);
-		this.receivedParts = new BitSet();
-		this.interested = new AtomicBoolean(false);
+		this.address = peerAddress;
+		this.port = Integer.parseInt(peerPort);
+		this.fileExist = hasFile;
+	}
+
+	public PeerData() {
+
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	public String getPeerId() {
 		return peerId;
 	}
 
-	public String getPeerAddress() {
-		return peerAddress;
+	public void setPeerId(String peerId) {
+		this.peerId = peerId;
 	}
 
-	public String getPeerPort() {
-		return peerPort;
+	public boolean isFileExist() {
+		return fileExist;
 	}
 
-	public boolean hasFile() {
-		return hasFile;
+	public void setFileExist(boolean fileExist) {
+		this.fileExist = fileExist;
 	}
-
-	public AtomicInteger getBytesDownloadedFrom() {
-		return bytesDownloadedFrom;
-	}
-
-	public BitSet getReceivedParts() {
-		return receivedParts;
-	}
-
-	public AtomicBoolean getInterested() {
-		return interested;
-	}
-
 }
