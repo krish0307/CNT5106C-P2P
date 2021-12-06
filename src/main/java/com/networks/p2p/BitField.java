@@ -30,15 +30,15 @@ public class BitField implements Serializable {
 		return size;
 	}
 
-	public boolean isFileDownloadComplete() {
+	public boolean isDownloadComplete() {
 		return bits.cardinality() == size;
 	}
 
-	public int getMissingPieceCount() {
+	public int getMissingInfo() {
 		return size - bits.cardinality();
 	}
 
-	public List<Integer> getMissingPieceIndices() {
+	public List<Integer> getMissingIndices() {
 		List<Integer> missingPieces = new ArrayList<>();
 		for (int i = 0; i < size; i++) {
 			if (!bits.get(i))

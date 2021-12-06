@@ -9,9 +9,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TimerTask;
 
-/**
- * ChokeUnchokeManager
- */
 @SuppressWarnings("unchecked")
 public class ChokeUnchokeTimer extends TimerTask {
 
@@ -20,14 +17,6 @@ public class ChokeUnchokeTimer extends TimerTask {
 
 	private static volatile ChokeUnchokeTimer instance = null; // static instance
 
-	/* task */
-
-	/**
-	 * get instance
-	 * 
-	 * @param controller
-	 * @return
-	 */
 	public static synchronized ChokeUnchokeTimer getInstance(PeerManager controller) {
 		if (instance == null) {
 			if (controller == null) {
@@ -42,36 +31,33 @@ public class ChokeUnchokeTimer extends TimerTask {
 		return instance;
 	}
 
-	public void destroy() {
-		// System.out.println(LOGGER_PREFIX + " Shutting down
-		// ChokeUnchokeManager......");
+	public void kill() {
 		this.cancel();
 	}
 
 	public void run() {
-
 		int preferredNeighbors = 0;
 		preferredNeighbors = (FileParser.getInstance().getCommonFileData().getNumberOfPreferredNeighbors());
-		HashMap<String, Double> speedMap = controller.getSpeed();
-		if (speedMap.size() >= preferredNeighbors) {
+		HashMap<String, Double> sMap = controller.getSpeed();
+		if (sMap.size() >= preferredNeighbors) {
 			ArrayList<String> chokedPeerList = new ArrayList<String>();
 			ArrayList<String> unchokePeers = new ArrayList<String>();
 
-			Set<Entry<String, Double>> entrySet = speedMap.entrySet();
-			List<Entry<String, Double>> mainList = new ArrayList<>();
-			mainList.addAll(entrySet);
+			Set<Entry<String, Double>> set = sMap.entrySet();
+			List<Entry<String, Double>> list = new ArrayList<>();
+			list.addAll(set);
 
-			Collections.sort(mainList, new Comparator<Entry<String, Double>>() {
+			Collections.sort(list, new Comparator<Entry<String, Double>>() {
 				public int compare(Entry<String, Double> t1, Entry<String, Double> t2) {
 					return t1.getValue().compareTo(t2.getValue());
 				}
 			});
 
 			for (int i = 0; i < preferredNeighbors; i++) {
-				unchokePeers.add(mainList.get(i).getKey());
+				unchokePeers.add(list.get(i).getKey());
 			}
-			for (int i = preferredNeighbors; i < mainList.size(); i++) {
-				chokedPeerList.add(mainList.get(i).getKey());
+			for (int i = preferredNeighbors; i < list.size(); i++) {
+				chokedPeerList.add(list.get(i).getKey());
 			}
 			try {
 				controller.unChkPeers(unchokePeers);

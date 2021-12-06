@@ -5,41 +5,33 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 
-/**
- * PeerServer
- */
 public class PeerAsServer implements Runnable {
 
-	private String peerServerID; // peer server id
-	private PeerManager controller;
+	private String peerId;
+	private PeerManager manager;
 
 	private boolean serverCompleted = false;
 
 	private static volatile PeerAsServer instance = null;
 
-	/**
-	 * getInstance
-	 * 
-	 * @param peerServerID
-	 * @param controller
-	 * @return
-	 */
-	public static PeerAsServer getInstance(String peerServerID, PeerManager controller) {
+	public static PeerAsServer getInstance(String peerServerID, PeerManager manager) {
 		if (instance == null) {
-			instance = new PeerAsServer();
-			instance.peerServerID = peerServerID;
-			instance.controller = controller;
+			instance = new PeerAsServer(peerServerID, manager);
 		}
 		return instance;
 	}
 
+	private PeerAsServer(String peerId, PeerManager manager) {
+		this.peerId = peerId;
+		this.manager = manager;
+	}
 
 	@Override
 	public void run() {
 		ServerSocket socket = null;
 		try {
 			HashMap<String, PeerData> peerInfoMap = FileParser.getInstance().getIdToPeerDataMap();
-			PeerData serverPeerInfo = peerInfoMap.get(peerServerID);
+			PeerData serverPeerInfo = peerInfoMap.get(peerId);
 			int peerServerPortNumber = serverPeerInfo.getPort();
 			socket = new ServerSocket(peerServerPortNumber);
 			long count = getNumberOfPeersToBeConnected();
@@ -47,10 +39,8 @@ public class PeerAsServer implements Runnable {
 			for (int i = 0; i < count; i++) {
 				Socket conn = socket.accept();
 //				logger.info(CLASS_NAME, "run", "Socket connection accepted");
-//				PeerHandler handler = new PeerHandler(conn, manager);
-				PeerHandler handler = PeerHandler.getNewInstance(conn, controller);
-//				handler.setPeerId(peerId);
-				controller.addHandler(handler);
+				PeerHandler handler = PeerHandler.getInstance(conn, manager);
+				manager.addHandler(handler);
 				new Thread(handler).start();
 
 			}
@@ -69,7 +59,7 @@ public class PeerAsServer implements Runnable {
 
 	private long getNumberOfPeersToBeConnected() {
 		return FileParser.getInstance().getIdToPeerDataMap().keySet().stream()
-				.filter(id -> Integer.parseInt(id) > Integer.parseInt(peerServerID)).count();
+				.filter(id -> Integer.parseInt(id) > Integer.parseInt(peerId)).count();
 
 	}
 

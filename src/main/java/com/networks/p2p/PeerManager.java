@@ -14,7 +14,7 @@ public class PeerManager {
 	private BitsManager bitsManager;
 	private static final String CLASS_NAME = PeerManager.class.getCanonicalName();
 
-	private HashMap<String, String> finishedPeersMap = new HashMap<String, String>();
+	private HashMap<String, String> downloadedPeers = new HashMap<String, String>();
 	private ArrayList<String> chokedPeers = new ArrayList<String>();
 	private ChokeUnchokeTimer chokeUnchokeTimer;
 	private OptimisticUnchokeTimer optimisticUnchokeTimer;
@@ -40,7 +40,7 @@ public class PeerManager {
 
 		boolean fileStatus = FileParser.getInstance().getIdToPeerDataMap().get(peerId).isFileExist();
 		bitsManager = BitsManager.getInstance(fileStatus, peerId);
-		finishedPeersMap = new HashMap<>();
+		downloadedPeers = new HashMap<>();
 
 	}
 
@@ -70,7 +70,7 @@ public class PeerManager {
 				int peerPort = (connectedNeighbours.getPort());
 				String peerAddress = connectedNeighbours.getAddress();
 				Socket neighbourSocket = new Socket(peerAddress, peerPort);
-				PeerHandler handler = PeerHandler.getNewInstance(neighbourSocket, this);
+				PeerHandler handler = PeerHandler.getInstance(neighbourSocket, this);
 				handler.setPeerId(connectedNeighbours.getPeerId());
 				addHandler(handler);
 				new Thread(handler).start();
@@ -92,14 +92,14 @@ public class PeerManager {
 		if (!isConnection() || !peerAsServer.isServerFinished()) {
 			return;
 		}
-		if (FileParser.getInstance().getIdToPeerDataMap().size() == finishedPeersMap.size()) {
+		if (FileParser.getInstance().getIdToPeerDataMap().size() == downloadedPeers.size()) {
 			shutdown();
 		}
 	}
 
 	public void shutdown() {
-		chokeUnchokeTimer.destroy();
-		optimisticUnchokeTimer.destroy();
+		chokeUnchokeTimer.kill();
+		optimisticUnchokeTimer.kill();
 		bitsManager.close();
 		System.exit(0);
 	}
@@ -111,7 +111,7 @@ public class PeerManager {
 	public synchronized Message getBitFieldMessage() {
 		Message message = Message.create();
 		message.setMessageType(MessageType.BITFIELD);
-		message.setBitFieldHandler(bitsManager.getBitField());
+		message.setBitField(bitsManager.getBitField());
 
 		return message;
 	}
@@ -120,7 +120,7 @@ public class PeerManager {
 		HashMap<String, Double> speedList = new HashMap<>();
 		for (int i = 0; i < handlersList.size(); i++) {
 			PeerHandler peerHandler = handlersList.get(i);
-			speedList.put(peerHandler.getPeerId(), peerHandler.downloadSpeed());
+			speedList.put(peerHandler.getPeerId(), peerHandler.getSpeed());
 		}
 		return speedList;
 	}
@@ -192,13 +192,13 @@ public class PeerManager {
 
 
 	public synchronized void insertData(Message pieceMessage, String sourcePeerID) {
-		bitsManager.write(pieceMessage.getIndex(), pieceMessage.getData());
+		bitsManager.writeData(pieceMessage.getIndex(), pieceMessage.getData());
 //		logger.info("Peer [" + instance.getPeerId() + "] has downloaded the piece [" + pieceMessage.getIndex() + "] from [" + sourcePeerID + "]. Now the number of pieces it has is " + (pieceManager.getBitField().getNoOfPieces()));
 	}
 
 
 	public Message genBitMessage(int index) {
-		Piece piece = bitsManager.get(index);
+		Data piece = bitsManager.get(index);
 		if (piece != null) {
 			Message message = Message.create();
 			message.setData(piece);
@@ -242,7 +242,7 @@ public class PeerManager {
 	}
 
 	public synchronized void setFileDownloadComplete(String peer) {
-		finishedPeersMap.put(peer, " ");
+		downloadedPeers.put(peer, " ");
 	}
 
 	public String getPeerId() {
@@ -266,7 +266,7 @@ public class PeerManager {
 	}
 
 	public boolean isDownloadComplete() {
-		return bitsManager.hasDownloadFileComplete();
+		return bitsManager.isDownloadComplete();
 	}
 
 }

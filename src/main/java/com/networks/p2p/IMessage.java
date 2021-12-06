@@ -7,6 +7,4 @@ public interface IMessage extends Serializable{
 	MessageType getType();
 
 	int getLength();
-
-	int getMessageNumber();
 }

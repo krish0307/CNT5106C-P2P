@@ -62,7 +62,7 @@ public class RequestProcessor implements Runnable {
 				interestedMessage.setMessageType(MessageType.INTERESTED);
 
 				if (message.getType() == MessageType.BITFIELD) {
-					neighborPeerBitFieldhandler = message.getBitFieldHandler();
+					neighborPeerBitFieldhandler = message.getBitField();
 
 					int missingPieceIndex = getPieceNumberToBeRequested();
 					if (missingPieceIndex == -1) {
@@ -95,7 +95,7 @@ public class RequestProcessor implements Runnable {
 						notInterestedMessage.setMessageType(MessageType.NOTINTERESTED);
 						peerHandler.sendNotInterestedMessage(notInterestedMessage);
 					} else {
-						if (peerHandler.isPreviousMessageReceived()) {
+						if (peerHandler.lastMessageStatus()) {
 							peerHandler.setPreviousMessageRcvd(false);
 							interestedMessage.setIndex(missingPieceIndex);
 							peerHandler.sendInterestedMessage(interestedMessage);
@@ -112,7 +112,7 @@ public class RequestProcessor implements Runnable {
 					int missingPieceIndex = getPieceNumberToBeRequested();
 
 					if (missingPieceIndex != -1) {
-						if (peerHandler.isPreviousMessageReceived()) {
+						if (peerHandler.lastMessageStatus()) {
 							peerHandler.setPreviousMessageRcvd(false);
 							interestedMessage.setIndex(missingPieceIndex);
 							peerHandler.sendInterestedMessage(interestedMessage);
@@ -142,7 +142,7 @@ public class RequestProcessor implements Runnable {
 	}
 
 	public int getPieceNumberToBeRequested() {
-		BitField thisPeerBitFiledHandler = controller.getBitFieldMessage().getBitFieldHandler();
+		BitField thisPeerBitFiledHandler = controller.getBitFieldMessage().getBitField();
 		int count = 0;
 		for (int i = 0; i < neighborPeerBitFieldhandler.getSize() && count < pieceIndexArray.length; i++) {
 			if (thisPeerBitFiledHandler.getBitField(i) || !neighborPeerBitFieldhandler.getBitField(i)) {
@@ -169,6 +169,6 @@ public class RequestProcessor implements Runnable {
 	}
 
 	public boolean isNeighborPeerDownloadedFile() {
-		return neighborPeerBitFieldhandler != null && neighborPeerBitFieldhandler.isFileDownloadComplete();
+		return neighborPeerBitFieldhandler != null && neighborPeerBitFieldhandler.isDownloadComplete();
 	}
 }

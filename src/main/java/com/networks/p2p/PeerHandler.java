@@ -8,15 +8,15 @@ import java.net.Socket;
 public class PeerHandler implements Runnable {
 	private static final String CLASS_NAME = PeerHandler.class.getCanonicalName();
 	private PeerManager manager;
-	private ObjectInputStream inputStream;
-	private PeerMessanger peerMesssanger;
+	private ObjectInputStream iStream;
+	private MessageQueue peerMesssanger;
 	private RequestProcessor requestProcessor;
 	private P2PLogger logger;
 
 	private String peerId;
 	private Socket otherSocket;
 
-	private boolean lastMessageReceived = true;
+	private boolean lastMsgRcvd = true;
 	private boolean isChokedNghbrPeer = false;
 	private boolean isHandshakeRcvd = false;
 	private boolean isHandShakeSent = false;
@@ -25,8 +25,8 @@ public class PeerHandler implements Runnable {
 	private long downloadStartTime = 0;
 	private int dataSize = 0;
 
-	synchronized public static PeerHandler getNewInstance(Socket socket, PeerManager controller) {
-		PeerHandler peerHandler = new PeerHandler(socket, controller);
+	synchronized public static PeerHandler getInstance(Socket socket, PeerManager manager) {
+		PeerHandler peerHandler = new PeerHandler(socket, manager);
 		return peerHandler;
 	}
 
@@ -34,14 +34,14 @@ public class PeerHandler implements Runnable {
 		this.otherSocket = socket;
 		this.manager = manager;
 		try {
-			ObjectOutputStream outputStream = new ObjectOutputStream(otherSocket.getOutputStream());
-			inputStream = new ObjectInputStream(otherSocket.getInputStream());
+			ObjectOutputStream oStream = new ObjectOutputStream(otherSocket.getOutputStream());
+			iStream = new ObjectInputStream(otherSocket.getInputStream());
 
 			if (manager == null) {
 				close();
 			}
 
-			peerMesssanger = PeerMessanger.getInstance(outputStream);
+			peerMesssanger = new MessageQueue(oStream);
 			if (peerMesssanger == null) {
 				close();
 			}
@@ -58,8 +58,8 @@ public class PeerHandler implements Runnable {
 
 	synchronized public void close() {
 		try {
-			if (inputStream != null) {
-				inputStream.close();
+			if (iStream != null) {
+				iStream.close();
 			}
 		} catch (IOException ignore) {
 		}
@@ -73,7 +73,7 @@ public class PeerHandler implements Runnable {
 		try {
 			while (true) {
 
-				IMessage message = (IMessage) inputStream.readObject();
+				IMessage message = (IMessage) iStream.readObject();
 
 				switch (message.getType()) {
 				case HANDSHAKE:
@@ -119,14 +119,13 @@ public class PeerHandler implements Runnable {
 				}
 			}
 		} catch (IOException | ClassNotFoundException e) {
-			logger.error(CLASS_NAME, "run", e);
 		}
 	}
 
 	private void processUnchockMessage(Message unchokeMessage) {
-		logger.info(CLASS_NAME, "processUnchockMessage", "peer is unchoked by " + peerId);
-		isChokedNghbrPeer = false;
 		try {
+			logger.info(CLASS_NAME, "processUnchockMessage", "peer is unchoked by " + peerId);
+			isChokedNghbrPeer = false;
 			requestProcessor.addMessage(unchokeMessage);
 		} catch (Exception e) {
 			logger.error(CLASS_NAME, "processUnchockMessage", e);
@@ -134,12 +133,12 @@ public class PeerHandler implements Runnable {
 	}
 
 	private void processPieceMessage(Message messge) {
-		logger.info(CLASS_NAME, "processPieceMessage", "Processing piece message from peer " + peerId);
-		manager.insertData(messge, peerId);
-		manager.sendHaveMessage(messge.getIndex(), peerId);
-		dataSize += messge.getData().getSize();
-		setPreviousMessageRcvd(true);
 		try {
+			logger.info(CLASS_NAME, "processPieceMessage", "Processing piece message from peer " + peerId);
+			manager.insertData(messge, peerId);
+			manager.sendHaveMessage(messge.getIndex(), peerId);
+			dataSize += messge.getData().getSize();
+			setPreviousMessageRcvd(true);
 			requestProcessor.addMessage(messge);
 		} catch (Exception e) {
 			logger.error(CLASS_NAME, "processPieceMessage", e);
@@ -155,7 +154,7 @@ public class PeerHandler implements Runnable {
 		try {
 			requestProcessor.addMessage(message);
 			if (isHandshakeRcvd && isHandShakeSent) {
-				startMeasuringDownloadTime();
+				startCountingDownloadTime();
 			}
 
 		} catch (Exception e) {
@@ -174,7 +173,7 @@ public class PeerHandler implements Runnable {
 
 		isHandshakeRcvd = true;
 		if (isHandShakeSent) {
-			startMeasuringDownloadTime();
+			startCountingDownloadTime();
 		}
 	}
 
@@ -192,9 +191,9 @@ public class PeerHandler implements Runnable {
 	}
 
 	private void processHaveMessage(Message message) {
-		logger.info(CLASS_NAME, "processHaveMessage",
-				"Recieved HAVE message from " + peerId + " for the piece" + message.getIndex());
 		try {
+			logger.info(CLASS_NAME, "processHaveMessage",
+					"Recieved HAVE message from " + peerId + " for the piece" + message.getIndex());
 			requestProcessor.addMessage(message);
 		} catch (Exception e) {
 			logger.error(CLASS_NAME, "processHaveMessage", e);
@@ -267,7 +266,7 @@ public class PeerHandler implements Runnable {
 	public void sendChokeMessage(Message message) {
 		try {
 			if (!isPeerChoked()) {
-				startMeasuringDownloadTime();
+				startCountingDownloadTime();
 				setChk(true);
 				peerMesssanger.sendMessage(message);
 			}
@@ -279,7 +278,7 @@ public class PeerHandler implements Runnable {
 	public void sendUnchokeMessage(Message message) {
 		try {
 			if (isPeerChoked()) {
-				startMeasuringDownloadTime();
+				startCountingDownloadTime();
 				setChk(false);
 				peerMesssanger.sendMessage(message);
 			}
@@ -312,12 +311,12 @@ public class PeerHandler implements Runnable {
 		}
 	}
 
-	private void startMeasuringDownloadTime() {
+	private void startCountingDownloadTime() {
 		downloadStartTime = System.currentTimeMillis();
 		dataSize = 0;
 	}
 
-	public double downloadSpeed() {
+	public double getSpeed() {
 		long timePeriod = System.currentTimeMillis() - downloadStartTime;
 		if (timePeriod != 0) {
 			return ((dataSize * 1.0) / (timePeriod * 1.0));
@@ -346,12 +345,12 @@ public class PeerHandler implements Runnable {
 		this.peerId = peerId;
 	}
 
-	public boolean isPreviousMessageReceived() {
-		return lastMessageReceived;
+	public boolean lastMessageStatus() {
+		return lastMsgRcvd;
 	}
 
 	public void setPreviousMessageRcvd(boolean lastMessageReceived) {
-		this.lastMessageReceived = lastMessageReceived;
+		this.lastMsgRcvd = lastMessageReceived;
 	}
 
 	public boolean isHandshakeRcvd() {

@@ -1,16 +1,14 @@
 package com.networks.p2p;
 
-/**
- * HandshakeMessage
- */
 public class HandshakeMessage implements IMessage {
-	private static int COUNT = 0;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
-	private final int messageNumber;
 	private String peerId;
 
 	public HandshakeMessage() {
-		messageNumber = ++COUNT;
 	}
 
 	public void setPeerId(String peerId) {
@@ -29,8 +27,5 @@ public class HandshakeMessage implements IMessage {
 		return 0;
 	}
 
-	public int getMessageNumber() {
-		return messageNumber;
-	}
 
 }

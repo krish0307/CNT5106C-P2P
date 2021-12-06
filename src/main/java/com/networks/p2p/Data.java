@@ -2,14 +2,16 @@ package com.networks.p2p;
 
 import java.io.Serializable;
 
-/**
- * piece
- */
-public class Piece implements Serializable {
+
+public class Data implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private byte[] byteData;
 	int size;
 
-	public Piece(int size) {
+	public Data(int size) {
 		this.size = size;
 	}
 

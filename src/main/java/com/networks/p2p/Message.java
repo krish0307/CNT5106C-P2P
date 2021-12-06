@@ -1,21 +1,19 @@
 package com.networks.p2p;
 
-/**
- * Peer2PeerMessage
- */
 public class Message implements IMessage{
-	private static int COUNT = 0;
 
-	private Piece data;
-	private BitField bitFieldHandler = null;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private Data data;
+	private BitField bitField = null;
 	private int index;
 	private int length;
 
 	private MessageType messageType;
-	public int messageNumber = 0;
 
 	private Message(){
-		messageNumber = ++COUNT;
 	}
 	
 	public static Message create(){
@@ -30,10 +28,6 @@ public class Message implements IMessage{
 		return this.length;
 	}
 
-	public int getMessageNumber() {
-		return messageNumber;
-	}
-
 	public byte[] getMessage(){
 		return null;
 	}
@@ -46,19 +40,19 @@ public class Message implements IMessage{
 		this.index = index;
 	}
 
-	public Piece getData() {
+	public Data getData() {
 		return data;
 	}
 
-	public BitField getBitFieldHandler() {
-		return bitFieldHandler;
+	public BitField getBitField() {
+		return bitField;
 	}
 
-	public void setBitFieldHandler(BitField bitFieldHandler) {
-		this.bitFieldHandler = bitFieldHandler;
+	public void setBitField(BitField bitField) {
+		this.bitField = bitField;
 	}
 
-	public void setData(Piece data) {
+	public void setData(Data data) {
 		this.data = data;
 	}
 
@@ -66,9 +60,6 @@ public class Message implements IMessage{
 		this.length = length;
 	}
 
-//	public int getMessageType() {
-//		return messageType;
-//	}
 
 	public void setMessageType(MessageType messageType) {
 		this.messageType = messageType;

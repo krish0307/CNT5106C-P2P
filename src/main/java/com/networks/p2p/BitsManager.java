@@ -4,174 +4,125 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.RandomAccessFile;
 
-/**
- * Piece Manager
- */
 public class BitsManager {
 
-	int numOfPieces; // num of piece
-	int size; // piece size
+	int numOfPieces;
+	int size;
 
-	private RandomAccessFile outStream;
+	private RandomAccessFile outputStream;
 	private FileInputStream inStream;
 
 	private static BitField bitField;
 	private static volatile BitsManager instance;
 
-	/**
-	 * get instance
-	 * 
-	 * @param isFileExists
-	 * @param peerID
-	 * @return
-	 */
+	public synchronized static BitsManager getInstance(boolean fileExists, String peerId) {
+		if (instance == null) {
+			instance = new BitsManager(fileExists, peerId);
+
+		}
+		return instance;
+	}
 
 	private BitsManager(boolean isFileExists, String peerID) {
 
-		// get config info: PieceSize
-		CommonData commonFileData = FileParser.getInstance().getCommonFileData();
-		size = (commonFileData.getPieceSize());
-
-		// get config info: FileSize
-		numOfPieces = (int) Math.ceil(commonFileData.getFileSize() / (size * 1.0));
-
 		try {
+			CommonData commonFileData = FileParser.getInstance().getCommonFileData();
+			size = (commonFileData.getPieceSize());
+
+			numOfPieces = (int) Math.ceil(commonFileData.getFileSize() / (size * 1.0));
+
 			bitField = new BitField(numOfPieces);
 			if (isFileExists) {
 				bitField.setBitFieldOnForAllIndexes();
 			}
-			String outputFileName = commonFileData.getFileName();
+			String fileName = commonFileData.getFileName();
 
-			String directoryName = peerID;
-			File directory = new File(directoryName);
+			String dirName = peerID;
+			File dir = new File(dirName);
 
 			if (!isFileExists) {
-				directory.mkdir();
+				dir.mkdir();
 			}
 
-			outputFileName = directory.getAbsolutePath() + "/" + outputFileName;
-			outStream = new RandomAccessFile(outputFileName, "rw");
-			outStream.setLength(commonFileData.getFileSize());
+			fileName = dir.getAbsolutePath() + "/" + fileName;
+			outputStream = new RandomAccessFile(fileName, "rw");
+			outputStream.setLength(commonFileData.getFileSize());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 	}
 
-	public synchronized static BitsManager getInstance(boolean isFileExists, String peerID) {
-		if (instance == null) {
-			instance = new BitsManager(isFileExists, peerID);
-
+	synchronized public Data get(int i) {
+		Data data = new Data(size);
+		if (bitField.getBitField(i)) {
+			byte[] rBytes = new byte[size];
+			int newSize = 0;
+			try {
+				outputStream.seek(i * size);
+				newSize = outputStream.read(rBytes);
+			} catch (Exception e) {
+				e.printStackTrace();
+				return null;
+			}
+			if (newSize != size) {
+				byte[] newBytes = new byte[newSize];
+				if (newSize >= 0) {
+					System.arraycopy(rBytes, 0, newBytes, 0, newSize);
+				}
+				data.setByteData(newBytes);
+			} else {
+				data.setByteData(rBytes);
+			}
+			return data;
 		}
-		return instance;
+		return null;
+
 	}
 
-	/**
-	 * close
-	 */
-	synchronized public void close() {
-		try {
-			if (outStream != null) {
-				outStream.close();
+	synchronized public void writeData(int i, Data data) {
+		if (!bitField.getBitField(i)) {
+			try {
+				outputStream.seek(i * size);
+				outputStream.write(data.getByteData());
+				bitField.setBitField(i, true);
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		} catch (Exception ignore) {
 		}
 
+	}
+
+	synchronized public int[] getMissingData() {
+
+		int missingCount = bitField.getMissingInfo();
+		int[] missingData = new int[missingCount];
+		int i = 0;
+		for (int val : bitField.getMissingIndices()) {
+			missingData[i++] = val;
+		}
+		return missingData;
+
+	}
+
+	public synchronized boolean isDownloadComplete() {
+		return bitField.isDownloadComplete();
+	}
+
+	public BitField getBitField() {
+		return bitField;
+	}
+
+	synchronized public void close() {
 		try {
+			if (outputStream != null) {
+				outputStream.close();
+			}
 			if (inStream != null) {
 				inStream.close();
 			}
 		} catch (Exception ignore) {
 		}
 
-	}
-
-	/**
-	 * Gets the piece of file.
-	 * 
-	 * @param index
-	 * @return
-	 */
-	synchronized public Piece get(int index) {
-		Piece newPiece = new Piece(size);
-		if (bitField.getBitField(index)) {
-			byte[] readBytes = new byte[size];
-			int newSize = 0;
-			// have to read this piece from my own output file.
-			try {
-				outStream.seek(index * size);
-				newSize = outStream.read(readBytes);
-			} catch (Exception e) {
-				e.printStackTrace();
-				return null;
-			}
-			if (newSize != size) {
-				byte[] newReadBytes = new byte[newSize];
-				if (newSize >= 0) {
-					System.arraycopy(readBytes, 0, newReadBytes, 0, newSize);
-				}
-				newPiece.setByteData(newReadBytes);
-			} else {
-				newPiece.setByteData(readBytes);
-			}
-			return newPiece;
-		} else {
-			return null;
-		}
-	}
-
-	/**
-	 * write piece
-	 * 
-	 * @param index
-	 * @param piece
-	 */
-	synchronized public void write(int index, Piece piece) {
-		if (!bitField.getBitField(index)) {
-			try {
-				// have to write this piece in Piece object array
-				outStream.seek(index * size);
-				outStream.write(piece.getByteData());
-				bitField.setBitField(index, true);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-
-	}
-
-	/**
-	 * the missing piece number.
-	 *
-	 * @return
-	 */
-	synchronized public int[] getMissingPieceNumberArray() {
-
-		int missingPieceCount = bitField.getMissingPieceCount();
-		int[] missData = new int[missingPieceCount];
-		int i = 0;
-		for (int val : bitField.getMissingPieceIndices()) {
-			missData[i++] = val;
-		}
-		return missData;
-
-	}
-
-	/**
-	 * check file download completed
-	 * 
-	 * @return
-	 */
-	public synchronized boolean hasDownloadFileComplete() {
-		return bitField.isFileDownloadComplete();
-	}
-
-	/**
-	 * getBitField
-	 * 
-	 * @return
-	 */
-	public BitField getBitField() {
-		return bitField;
 	}
 }
