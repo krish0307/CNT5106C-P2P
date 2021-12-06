@@ -1,68 +1,112 @@
 package com.networks.p2p;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
+public class P2PLogger extends Logger {
+	private static P2PLogger logger;
+	private final String logFileName;
+	private final String peerId;
 
-public class P2PLogger {
-	static final Logger logger = Logger.getLogger(P2PLogger.class);
-	private static P2PLogger instance = null;
+	private FileHandler fileHandler;
 
-	private P2PLogger(String peerId) {
+	private SimpleDateFormat formatter = null;
+
+	public static P2PLogger getInstance(String peerId) {
+		if (logger == null) {
+			String directory = Constants.LOGDIRECTORY;
+			File file = new File(directory);
+			if (!file.exists()) {
+				file.mkdirs();
+			}
+			logger = new P2PLogger(peerId, directory + "/" + Constants.LOGPREFIX + peerId + ".log",
+					Constants.LOGNAME);
+			logger.init();
+
+		}
+		return logger;
+	}
+
+	public P2PLogger(String peerID, String logFileName, String name) {
+		super(name, null);
+		this.logFileName = logFileName;
+		this.setLevel(Level.ALL);
+		this.peerId = peerID;
+	}
+
+	private void init() {
 		try {
-			String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
+			fileHandler = new FileHandler(logFileName);
+			fileHandler.setFormatter(new SimpleFormatter() {
 
-			FileAppender appender = new FileAppender(new PatternLayout("%d [%p|%c|%C{1}] %m%n"),
-					"P2P- " + peerId + " - " + timeStamp + ".log", true);
-//			appender.setFile(timeStamp);
-			appender.activateOptions();
-			Logger.getRootLogger().addAppender(appender);
-		} catch (IOException e) {
+				public synchronized String format(LogRecord record) {
+					if (record != null) {
+						return record.getMessage();
+					}
+					return null;
+				}
+
+				@Override
+				public synchronized String formatMessage(LogRecord record) {
+					return this.format(record);
+				}
+			});
+
+			formatter = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss");// ("E, dd MMM yyyy hh:mm:ss a");
+			this.addHandler(fileHandler);
+		} catch (SecurityException | IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static P2PLogger getInstance(String peerId) {
-		if (instance == null) {
-			instance = new P2PLogger(peerId);
+	public void close() {
+		try {
+			if (fileHandler != null) {
+				fileHandler.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		return instance;
 	}
 
-	public static P2PLogger getInstance() {
-		return instance;
+	public void error(String prefix, String message, Exception e) {
+		this.log(Level.SEVERE, "[" + prefix + "]: " + message);
+		if (e != null) {
+			StackTraceElement[] stackTrace = e.getStackTrace();
+			this.log(Level.FINEST, "[" + prefix + "]: " + e.getMessage());
+			for (StackTraceElement stackTraceElement : stackTrace) {
+				this.log(Level.FINEST, stackTraceElement.toString());
+			}
+		}
 	}
 
-	public void info(String className, String method, String msg) {
-		logger.info("ClassName-" + className + "." + method + " Message - " + msg);
+	public void error(String message) {
+		this.log(message, Level.SEVERE);
 	}
 
-	public void error(String className, String method, String msg, Exception e) {
-		logger.error("ClassName-" + className + "." + method + " Message - " + msg, e);
+	public synchronized void info(String message) {
+		this.log(message, Level.INFO);
 	}
 
-	public void error(String className, String method, String msg) {
-		logger.error("ClassName-" + className + "." + method + " Message - " + msg);
+	public synchronized void log(String message, Level level) {
+		String date = formatter.format(Calendar.getInstance().getTime());
+		this.log(Level.INFO, "[" + date + "]: Peer [peer_ID " + peerId + "] " + message);
 	}
 
-	public void error(String className, String method, Exception e) {
-		logger.error("ClassName-" + className + "." + method, e);
+	@Override
+	public synchronized void logp(Level level, String className, String methodName, String message) {
+		super.logp(level, className, methodName, message + "\n");
 	}
 
-	public void warning(String className, String method, String msg) {
-		logger.warn("ClassName-" + className + "." + method + " Message - " + msg);
+	public synchronized void info(String className, String methodName, String message) {
+		String date = formatter.format(Calendar.getInstance().getTime());
+		this.logp(Level.INFO, className, methodName, "[" + date + "]: Peer [peer_ID " + peerId + "] " + message);
 	}
-
-	public void debug(String className, String method, String msg) {
-		logger.debug("ClassName-" + className + "." + method + " Message - " + msg);
-	}
-
-	public void debug(String className, String method, String msg, Exception e) {
-		logger.debug("ClassName-" + className + "." + method + " Message - " + msg, e);
-	}
-
 }

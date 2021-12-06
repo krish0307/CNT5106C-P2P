@@ -14,7 +14,7 @@ public class FileParser {
 	private HashMap<String, PeerData> peerIdToData;
 	private static FileParser instance;
 	private CommonData data;
-	private P2PLogger logger = P2PLogger.getInstance();
+//	private P2PLogger logger = P2PLogger.getInstance();
 
 	public static FileParser getInstance() {
 		if (instance == null) {
@@ -48,16 +48,16 @@ public class FileParser {
 				i++;
 			}
 		} catch (Exception e) {
-			logger.error(CLASS_NAME, "parsePeersFile", e);
+//			logger.error(CLASS_NAME, "parsePeersFile", e);
 		} finally {
 			try {
 				inputFileReader.close();
 				in.close();
 			} catch (Exception e) {
-				logger.error(CLASS_NAME, "parsePeersFile", e);
+//				logger.error(CLASS_NAME, "parsePeersFile", e);
 			}
 		}
-		logger.info(CLASS_NAME, "parsePeersFile", "Parsing is finished with data" + peersData.toString());
+//		logger.info(CLASS_NAME, "parsePeersFile", "Parsing is finished with data" + peersData.toString());
 		return peersData;
 	}
 
@@ -87,9 +87,9 @@ public class FileParser {
 			in.close();
 
 		} catch (Exception e) {
-			logger.error(CLASS_NAME, "parseCommonFile", e);
+//			logger.error(CLASS_NAME, "parseCommonFile", e);
 		}
-		logger.info(CLASS_NAME, "parseCommonFile", "Parsing is finished with data" + data.toString());
+//		logger.info(CLASS_NAME, "parseCommonFile", "Parsing is finished with data" + data.toString());
 		return data;
 	}
 
